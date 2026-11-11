@@ -1,7 +1,9 @@
-"""Total-dependent basic strategy for 4-8 deck, American peek blackjack.
+"""Total-dependent basic strategy for 4-8 deck blackjack.
 
 Reference: https://wizardofodds.com/games/blackjack/strategy/4-decks/
 Supports S17/H17, DAS/no DAS and late surrender. No count deviations.
+Explicit S17 no-peek/all-bets-lost support also uses:
+https://wizardofodds.com/ask-the-wizard/blackjack/no-peek/
 Double is assumed to be allowed on any first two cards when available.
 """
 
@@ -18,6 +20,7 @@ class Rules:
     late_surrender: bool = False
     decks: int = 6
     dealer_peeks: bool = True
+    no_peek_loses_all_bets: bool = False
 
 
 @dataclass(frozen=True)
@@ -102,11 +105,29 @@ def terminal_decision(cards, total, soft, after_split):
     return None
 
 
+def validate_rules(rules):
+    if rules.decks not in (4, 5, 6, 7, 8):
+        raise ValueError("Supported rules require 4-8 decks.")
+    if rules.dealer_peeks:
+        if rules.no_peek_loses_all_bets:
+            raise ValueError("Conflicting dealer blackjack rules.")
+    elif not rules.no_peek_loses_all_bets or rules.hit_soft_17 or rules.late_surrender:
+        raise ValueError("No-peek support requires S17, no surrender, and loss of all bets on dealer blackjack.")
+
+
+def no_peek_options(pair, dealer, rules, can_split, can_double):
+    # Shackleford's European/no-peek adjustments. These do NOT apply to OBO.
+    if not rules.dealer_peeks:
+        can_double = can_double and dealer not in (10, 11)
+        if (pair == 8 and dealer in (10, 11)) or (pair == 11 and dealer == 11):
+            can_split = False
+    return can_split, can_double
+
+
 def recommend(cards, dealer_card, rules=None, *, can_double=True, can_split=True,
               can_surrender=True, after_split=False, split_aces=False):
     rules = rules or Rules()
-    if rules.decks not in (4, 5, 6, 7, 8) or not rules.dealer_peeks:
-        raise ValueError("Supported rules: 4-8 decks with American dealer peek.")
+    validate_rules(rules)
     cards = list(cards)
     if len(cards) < 2:
         raise ValueError("Enter at least two player cards.")
@@ -116,6 +137,7 @@ def recommend(cards, dealer_card, rules=None, *, can_double=True, can_split=True
     if terminal is not None:
         return terminal
     pair = rank_value(cards[0]) if len(cards) == 2 and cards[0] == cards[1] else None
+    can_split, can_double = no_peek_options(pair, dealer, rules, can_split, can_double)
     if split_aces:
         if not after_split:
             raise ValueError("Split-ace restrictions require a hand that came from a split.")

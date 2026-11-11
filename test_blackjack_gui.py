@@ -50,6 +50,21 @@ class OverlayTests(unittest.TestCase):
         self.overlay.decks.setValue(2)
         self.assertIn("True count: +1.00", self.overlay.count_label.text())
 
+    def test_bvc_cannot_reuse_or_accumulate_shoe_count(self):
+        self.overlay.cards.setText("5, 5")
+        self.overlay.apply_button.click()
+        self.overlay.advisor.profile.setCurrentIndex(1)
+        self.assertEqual(self.overlay.counter.running_count, 0)
+        self.assertFalse(self.overlay.tabs.isTabEnabled(1))
+        self.overlay.cards.setText("5, 5")
+        self.overlay.apply_snapshot()
+        self.assertEqual(self.overlay.counter.running_count, 0)
+        self.overlay.new_round()
+        self.assertIn("Fresh shuffle", self.overlay.status.text())
+        self.overlay.advisor.profile.setCurrentIndex(0)
+        self.assertTrue(self.overlay.tabs.isTabEnabled(1))
+        self.assertEqual(self.overlay.counter.running_count, 0)
+
     def test_invalid_input_and_unconfigured_capture(self):
         self.overlay.cards.setText("5, invalid")
         self.overlay.apply_button.click()

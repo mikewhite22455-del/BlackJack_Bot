@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "profile": "Casino Time - Pragmatic Play VIP Blackjack",
+  "source": "https://www.casinotime.ca/blog/how-to-play-vip-blackjack-by-pragmatic-play",
+  "data_origin": "synthetic",
+  "policy": "fixed-unit basic strategy; no insurance or side bets",
+  "runs": [
+    {
+      "scenario": {
+        "dealer_ten": "peek",
+        "cut_cards": 208,
+        "seats": 5,
+        "burn_cards": 1
+      },
+      "seed": 20261111,
+      "result": {
+        "rounds": 25000,
+        "shoes": 1917,
+        "net_units": 42.0,
+        "mean_net_per_initial_unit": 0.00168,
+        "approx_95pct_shoe_cluster_interval": [
+          -0.012698659277782378,
+          0.016058659277782376
+        ],
+        "observed_max_drawdown_units": 226.0,
+        "winning_round_fraction": 0.43556,
+        "interpretation": "Simulation estimate for stated assumptions, not verified live expected value."
+      }
+    },
+    {
+      "scenario": {
+        "dealer_ten": "peek",
+        "cut_cards": 312,
+        "seats": 5,
+        "burn_cards": 1
+      },
+      "seed": 20261112,
+      "result": {
+        "rounds": 25000,
+        "shoes": 1292,
+        "net_units": 13.5,
+        "mean_net_per_initial_unit": 0.00054,
+        "approx_95pct_shoe_cluster_interval": [
+          -0.013979353569435374,
+          0.015059353569435375
+        ],
+        "observed_max_drawdown_units": 237.0,
+        "winning_round_fraction": 0.4376,
+        "interpretation": "Simulation estimate for stated assumptions, not verified live expected value."
+      }
+    },
+    {
+      "scenario": {
+        "dealer_ten": "no_peek_all_bets",
+        "cut_cards": 208,
+        "seats": 5,
+        "burn_cards": 1
+      },
+      "seed": 20261113,
+      "result": {
+        "rounds": 25000,
+        "shoes": 1931,
+        "net_units": -176.5,
+        "mean_net_per_initial_unit": -0.00706,
+        "approx_95pct_shoe_cluster_interval": [
+          -0.020855608248665523,
+          0.006735608248665521
+        ],
+        "observed_max_drawdown_units": 322.5,
+        "winning_round_fraction": 0.43404,
+        "interpretation": "Simulation estimate for stated assumptions, not verified live expected value."
+      }
+    },
+    {
+      "scenario": {
+        "dealer_ten": "no_peek_all_bets",
+        "cut_cards": 312,
+        "seats": 5,
+        "burn_cards": 1
+      },
+      "seed": 20261114,
+      "result": {
+        "rounds": 25000,
+        "shoes": 1301,
+        "net_units": -263.5,
+        "mean_net_per_initial_unit": -0.01054,
+        "approx_95pct_shoe_cluster_interval": [
+          -0.02433277358669876,
+          0.0032527735866987578
+        ],
+        "observed_max_drawdown_units": 286.5,
+        "winning_round_fraction": 0.43104,
+        "interpretation": "Simulation estimate for stated assumptions, not verified live expected value."
+      }
+    }
+  ]
+}

@@ -40,6 +40,69 @@ def test_manual_advice_respects_rules_and_available_actions(panel):
     assert "Confirm" in panel.advice.text()
 
 
+def test_bvc_profile_uses_no_peek_strategy_and_requires_split_state(panel):
+    panel.profile.setCurrentIndex(1)
+    assert not panel.soft17.isEnabled()
+    assert not panel.surrender.isEnabled()
+    panel.player.setText("8, 8")
+    panel.dealer.setText("10")
+    assert "Confirm" in panel.advice.text()
+    panel.confirm_rules.setChecked(True)
+    assert panel.advice.text().startswith("HIT")
+    panel.after_split.setChecked(True)
+    assert "must agree" in panel.advice.text()
+    panel.splits_used.setValue(3)
+    panel.dealer.setText("6")
+    assert panel.advice.text().startswith("STAND")
+    panel.reset_round()
+    assert panel.splits_used.value() == 0
+    panel.profile.setCurrentIndex(0)
+    assert panel.soft17.isEnabled()
+    assert not panel.confirm_rules.isChecked()
+
+
+def test_bvc_saved_profile_remains_unconfirmed_and_preserves_boxes(panel, tmp_path):
+    panel.settings_path = tmp_path / "bvc.json"
+    panel.profile.setCurrentIndex(1)
+    panel.confirm_rules.setChecked(True)
+    panel.regions = [None] * 5
+    panel.save_settings()
+    panel.profile.setCurrentIndex(0)
+    panel.load_settings()
+    assert panel.is_bvc
+    assert len(panel.regions) == 5
+    assert not panel.confirm_rules.isChecked()
+
+
+def test_casinotime_profile_requires_ten_rule_and_limits_splits(panel):
+    panel.profile.setCurrentIndex(2)
+    panel.player.setText("8, 8")
+    panel.dealer.setText("10")
+    panel.confirm_rules.setChecked(True)
+    assert "Confirm the dealer-ten" in panel.advice.text()
+    panel.ct_ten.setCurrentIndex(1)
+    assert not panel.confirm_rules.isChecked()
+    panel.confirm_rules.setChecked(True)
+    assert panel.advice.text().startswith("SPLIT")
+    panel.after_split.setChecked(True)
+    assert panel.advice.text().startswith("HIT")
+    assert not panel.soft17.isEnabled()
+    assert not panel.surrender.isChecked()
+
+
+def test_casinotime_setup_never_restores_rule_confirmation(panel, tmp_path):
+    panel.settings_path = tmp_path / "casino-time.json"
+    panel.profile.setCurrentIndex(2)
+    panel.ct_ten.setCurrentIndex(2)
+    panel.confirm_rules.setChecked(True)
+    panel.save_settings()
+    panel.profile.setCurrentIndex(0)
+    panel.load_settings()
+    assert panel.is_casinotime
+    assert panel.ct_ten.currentData() is None
+    assert not panel.confirm_rules.isChecked()
+
+
 def test_stable_screen_advice_is_removed_on_uncertain_or_incomplete_readings(panel):
     panel.confirm_rules.setChecked(True)
     panel.source = "screen"
