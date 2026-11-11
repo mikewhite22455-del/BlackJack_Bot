@@ -3,6 +3,74 @@
 A desktop hand advisor with manual entry, calibrated player/dealer OCR,
 background monitoring, and a separate reviewed Hi-Lo count panel.
 
+## Offline Q-learning lab
+
+The separate learning lab trains **hand decisions**, then freezes the policy and
+compares it with the existing basic strategy and an independently computed exact
+model optimum. It uses only Python's standard library and cannot contact a casino,
+read a screen, place a bet, or change the desktop advisor's recommendations.
+
+On Windows with Python 3.10+, double-click **Start_Learning_Lab_Windows.bat**.
+On other systems, or to choose the experiment size:
+
+```sh
+python blackjack_lab.py --train-episodes 1000000 --eval-rounds 200000
+```
+
+Open `learning-results/report.html`. `results.json` contains the numeric results;
+`checkpoint.json` saves Q values, action visits, rules and both training RNG states.
+More training resumes deterministically, without resetting exploration or visits:
+
+```sh
+python blackjack_lab.py --resume learning-results/checkpoint.json --train-episodes 1000000
+```
+
+Use `--train-episodes 0 --resume ...` for evaluation only, `--output` for separate
+experiment directories, and `--six-to-five` on a new run to study the payout penalty.
+The lab's output directory is ignored by git. Training and evaluation have separate
+seeds. Evaluation never updates Q values. Sessions use a fixed one-unit opening bet;
+splits/doubles can expose four units. There is no bankroll constraint, staking
+progression, stop-loss or profit-target selection.
+
+### Rule model and limitations
+
+The default model uses independent infinite-deck draws, S17, American dealer peek,
+3:2 naturals, double on any initial two cards, double after split, one split only,
+and one card per split ace. Split 21 pays even money. Insurance, side bets and
+surrender are excluded. These main-game rules are documented at:
+https://help.shuffle.com/en/articles/8231559-shuffle-original-blackjack-game-information
+
+**This is not a certified casino replica or an approved live bot.** The enumerated
+default model return is approximately 99.4296% per initial bet; Shuffle's marketing
+page lists 99.48%. That discrepancy remains unresolved. The program reports its
+modeled result rather than forcing it to match a marketing figure. Exact results
+apply to the stated model only and do not validate a casino's implementation.
+
+The baseline advisor uses a multi-deck strategy table; its result is separately
+evaluated under the lab's infinite-deck rules. The exact oracle enumerates all card
+probabilities and is never used as a training label. The Q learner receives only
+public hand state and sampled rewards, not the dealer hole card or outcome.
+
+The learning update uses gamma=1, learning rate `visits**-0.6` for bootstrapped
+actions and `1/visits` for always-terminal actions (stand, double and splitting aces), and
+epsilon-greedy exploration decaying from 0.30 to a 0.05 floor. Training uses uniformly sampled
+reachable decision states and uniformly sampled first actions (exploring starts),
+followed by epsilon-greedy decisions and ordinary sampled draws. Hit uses the same
+learning-rate schedule whether the sampled draw busts or continues; outcome-dependent
+learning rates would bias the value. Non-ace split actions use the bootstrapped schedule.
+Training episode counts therefore are **not** counts of full casino rounds.
+Splitting branches into two hands: the Bellman target adds both children's expected
+net returns. Simulation preserves their shared dealer outcome for correct round
+variance. Only hit/stand/double/split decisions are learned, never stake amounts.
+
+Evaluation uses fresh, complete rounds, natural and dealer-blackjack settlement,
+and independent fixed seeds per policy. Reports include exact expected returns,
+sample mean confidence intervals and the fraction of fixed-length sessions ending
+ahead. A positive sample session or confidence interval does not establish an edge.
+For this rule model even optimal expected return is negative; more training cannot
+overcome that mathematical bound. The lab measures decision quality, not future-roll
+prediction or evidence of live profitability.
+
 ## Start on Windows
 
 1. Install Python 3.10 or newer from https://www.python.org/downloads/.
