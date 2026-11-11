@@ -8,6 +8,7 @@ from PyQt5 import QtCore, QtWidgets
 
 from casinotime_core import PROFILE, RANKS, SOURCE_URL, Scenario, ShoeLedger, Table
 from casinotime_rollout import compare_actions, public_view
+from casinotime_live import LiveTablePanel
 
 
 RULES_TEXT = """<h2>Casino Time · Pragmatic Play VIP Blackjack</h2>
@@ -21,7 +22,9 @@ possible. The lab implements both ordinary and early shoe replacement.</p>
 <p>Actual cut position, burn procedure, minimum/maximum bets, and the dealer's
 ten-upcard peek/settlement rule are not established by the public article.
 The controls select research assumptions. The article confirms an ace-upcard check.
-There is no validated live-table connector or automatic table recognition.</p>
+Browser tab sharing provides a live pixel feed and a calibrated hand reader.
+Automatic whole-table identities, round/shuffle detection and a casino API are
+not validated or connected.</p>
 <h3>What the program calculates</h3>
 <p>Whole-table play across 1–7 seats; physical cards sampled without replacement;
 stable card identities; observed Hi-Lo count; and next-card probabilities from
@@ -33,7 +36,8 @@ continuations per legal action. Later decisions use basic strategy. The displaye
 intervals quantify sampling noise; selecting the highest sample mean does not
 prove that action is optimal. Practice sessions start from reproducible seed 1.</p>
 <p>All cards in Practice are generated locally. Replay reads public-card logs only.
-There is no connection to a casino, automatic betting, or real money in this application.</p>
+Live table connection receives the browser tab you choose; its configured rank boxes
+can feed the hand advisor. It does not feed practice counts or execute game actions.</p>
 <h3>Specialists</h3>
 <p>The observation ledger records evidence; the shoe engine owns the deck; the
 probability calculator handles arithmetic; the strategy module supplies baseline
@@ -74,7 +78,7 @@ class CasinoTimeWindow(QtWidgets.QWidget):
         title = QtWidgets.QLabel("Casino Time · Eight-deck blackjack lab")
         title.setStyleSheet("font-size:24px;color:#44d5c5;font-weight:bold")
         root.addWidget(title)
-        root.addWidget(QtWidgets.QLabel("Pragmatic Play VIP rules · Local practice / research · 416-card shoe"))
+        root.addWidget(QtWidgets.QLabel("Pragmatic Play VIP rules · Practice, research and live hand reading · 416-card shoe"))
         tabs = QtWidgets.QTabWidget()
         root.addWidget(tabs)
         practice = QtWidgets.QWidget()
@@ -97,6 +101,8 @@ class CasinoTimeWindow(QtWidgets.QWidget):
         self.probabilities.setWordWrap(True)
         layout.addWidget(self.probabilities)
         tabs.addTab(practice, "Practice table")
+        self.live_panel = LiveTablePanel(self)
+        tabs.addTab(self.live_panel, "Live table connection")
         self.build_replay(tabs)
         rules = QtWidgets.QTextBrowser()
         rules.setOpenExternalLinks(True)
@@ -189,6 +195,7 @@ class CasinoTimeWindow(QtWidgets.QWidget):
         self.refresh_actions(self.table.public_state())
 
     def closeEvent(self, event):
+        self.live_panel.shutdown()
         if self.rollout_worker is not None:
             self.rollout_worker.requestInterruption()
             self.rollout_worker.wait()

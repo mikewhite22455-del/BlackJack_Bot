@@ -222,7 +222,7 @@ class AdvicePanel(QtWidgets.QWidget):
             self.profile_note.setText(
                 "Casino Time Pragmatic VIP: 8 decks, S17, 3:2, DAS, one split per box, one card per split ace. "
                 "Continuing shoe; ace checked before decisions. Ten-upcard rule needs confirmation. "
-                "Use advice only after any dealer blackjack check is complete. No verified live integration.")
+                "Use advice only after any dealer blackjack check is complete. Live game actions remain manual.")
         self.ct_ten.setVisible(self.is_casinotime)
         self.ct_ten.setCurrentIndex(0)
         self.splits_used.setVisible(self.is_bvc)
@@ -423,7 +423,7 @@ class AdvicePanel(QtWidgets.QWidget):
         self.update_advice()
         try:
             self.validate_setup()
-            images = capture_regions(self.regions)
+            images = self.capture_images()
         except Exception as exc:
             self.stop_monitoring()
             self.status.setText(str(exc))
@@ -435,6 +435,9 @@ class AdvicePanel(QtWidgets.QWidget):
         self.worker.result_ready.connect(self.receive_scan)
         self.worker.finished.connect(self.scan_finished)
         self.worker.start()
+
+    def capture_images(self):
+        return capture_regions(self.regions)
 
     def receive_scan(self, generation, readings, error):
         if generation != self.generation:
@@ -473,7 +476,7 @@ class AdvicePanel(QtWidgets.QWidget):
         if worker is not None:
             worker.deleteLater()
         if self.single_remaining:
-            QtCore.QTimer.singleShot(150, self.scan)
+            QtCore.QTimer.singleShot(getattr(self, "second_scan_delay", 150), self.scan)
         if not self.timer.isActive() and not self.single_remaining:
             self.player.setReadOnly(False)
             self.dealer.setReadOnly(False)

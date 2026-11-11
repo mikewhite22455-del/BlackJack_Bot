@@ -40,11 +40,42 @@ Open `casinotime-results/report.html`. CSV round histories and JSON results are
 also written. [Validation and rule coverage](docs/casinotime-validation.md)
 include the completed benchmark and remaining integration work.
 
-**Current scope:** implemented main-game rules and public-evidence analysis,
-with no live Casino Time connection or automatic full-table capture. This is not
-a certified replica or proof of positive expected return. The older Q-learning
+**Current scope:** main-game simulation, automatic shared-tab pixel capture, and
+a calibrated live hand reader. The pixel feed is not an authenticated casino API,
+automatic whole-table card tracker, or betting connection. This is not a certified
+replica or proof of positive expected return. The older Q-learning
 lab below uses a separate infinite-deck model and is not Casino Time training.
 Optional CrewAI reviewers can inspect results; setup is in the validation notes.
+
+### Connect the visible Casino Time table
+
+1. Open the program with **Start_Casino_Time_Windows.bat** and choose **Live table connection**.
+2. Click **Connect browser capture**. A local capture page opens in your browser.
+3. Open Casino Time normally, sign in yourself if needed, and open the exact blackjack table.
+4. On the capture page click **Share casino tab**, then choose that table in the
+   browser's sharing picker. Keep the capture page open. Chrome or Edge is the
+   target browser; actual permission prompts remain under your control.
+5. Check **Full-table preview** in the desktop app. Use **Save calibration image**
+   if you need to provide the exact layout for further configuration.
+6. In **Calibrated hand reader**, select one rank box per current player card and
+   the dealer upcard. Check the layout and rule confirmations, then **Start monitoring**.
+   Install Tesseract as described in the screen-reading setup below.
+
+The whole selected tab is captured automatically; only the configured card ranks
+are recognized. Add a box after each hit and use New Round when cards clear. This
+is live hand analysis, not unattended play. Hand positions, available actions,
+splits and rule confirmation still require user input. Full-table physical-card
+tracking and automatic round/shuffle detection need actual-table calibration and
+validation before this feed can update a live shoe count. The practice shoe stays
+separate so simulated cards cannot contaminate observed cards.
+
+Frames travel to an authenticated loopback receiver on the same computer, with no
+audio or casino credentials. Frames are kept only in memory unless you choose to
+save a calibration image. Disconnecting clears the frame and withdraws OCR trust;
+a stale feed or a new sharing stream/size requires rechecking the layout. Stop
+monitoring before navigating to another game or changing browser zoom: pixels
+alone do not verify the selected table's identity. Capture alone
+cannot send game actions. No supported Casino Time player API has been verified.
 
 
 ## Bitcoin Video Casino profile

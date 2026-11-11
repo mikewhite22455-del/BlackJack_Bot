@@ -36,7 +36,7 @@ All bets in the benchmark open at one unit; there is no stake progression.
 | Timeout/disconnection | The guide gives conflicting defaults. No live timer, fallback click or disconnection behavior is implemented. |
 | Failed double/split, early decisions, multiple seats per account, Bet Behind | No server requests; operational workflows are not implemented. |
 | Video artwork, animations and shuffle recognition | Existing rank OCR needs calibration; complete-table recognition and automatic shoe resets are not validated. |
-| Online API | No supported player API confirmed; no connector included. |
+| Online API | No supported player API confirmed. A loopback browser-pixel connection is available; no account or betting API is included. |
 
 The GUI requires an explicit dealer-ten scenario before practice starts. The
 legacy advisor withholds ten-upcard advice until that procedure is selected.
@@ -117,6 +117,50 @@ shared-dealer simulations, public-view independence from hidden ranks, and GUI
 profile persistence. Linux Qt was rendered offscreen; a real Casino Time screen
 and Windows desktop have not been exercised in this workspace. CI runs Windows
 and Linux. No real-money or casino-account action was performed.
+
+## Live browser capture addition
+
+The desktop app now includes **Live table connection**. `casinotime_bridge.py`
+starts only when the user clicks Connect. It serves a capture page from a random
+port on 127.0.0.1. The user chooses a browser tab through the browser's own screen
+sharing picker. `capture/capture.js` sends JPEG frames at approximately two per
+second, scaled to at most 2560 × 1440, to this same-computer receiver.
+
+Requests require a random per-connection token, the exact loopback Host and
+same-origin Origin. The server rejects cross-origin requests, unexpected paths,
+oversized bodies and invalid images. No casino cookies, passwords, network game
+messages or hidden DOM state are accessed. Frames are retained in memory only;
+Save calibration image is an explicit user action. Browser sharing transmits no
+audio. Disconnect stops the receiver, clears its frame, and rotates its token.
+
+The full selected tab appears in the preview. The existing advisor can read
+calibrated rank boxes from that feed, using two agreeing readings from distinct
+received frames. The reader checks whether the selected card crops changed while
+OCR was running. A stale transport, new sharing stream or changed dimensions
+withdraws trust. Saved coordinates do not restore layout or rule confirmation.
+
+This is **pixel transport plus a current-hand reader**, not full-table physical
+card recognition. Adding new hit-card boxes, managing split hands, choosing
+available actions and resetting rounds still require user input. Whole-table
+identity tracking, automatic round/shuffle detection and a betting connector
+remain unimplemented. The practice shoe and live pixel stream are not joined.
+The browser cannot independently certify the selected casino/table identity;
+navigation inside an existing shared tab may retain its stream identifier.
+Stop monitoring before changing tables, layouts or browser zoom.
+
+Validation after the addition: 827 tests and 39 subtests passed locally; lint
+passed. New coverage includes actual local HTTP frame delivery, token/origin/host
+checks, source replacement, stale frames, crop coordinates, changed cards during
+OCR, calibration persistence and a JPEG-to-Tesseract-to-advisor integration on
+generated ranks. The JavaScript lifecycle tests use mocked browser interfaces,
+covering permission denial, frame delivery, stop and connection failure. Qt
+screens were rendered offscreen. A real user's browser sharing picker and an
+authenticated Casino Time table have not been exercised here; no site-accuracy
+or uninterrupted-capture claim follows from generated-image tests.
+
+Browser API references:
+[getDisplayMedia](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia),
+[screen capture](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Capture_API/Using_Screen_Capture).
 
 ## Optional CrewAI specialists
 
