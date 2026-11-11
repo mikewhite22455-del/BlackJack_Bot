@@ -1,7 +1,115 @@
 # Blackjack Assistant
 
+## Bitcoin Video Casino profile
+
+The existing desktop advisor now includes **Bitcoin Video Casino - advisory / practice** in
+the Table profile selector. Start `Start_Blackjack_Windows.bat`, choose that profile, confirm
+the displayed rules against the current table, and enter the current hand or calibrate its
+card boxes. For split hands, enter the total splits used in the round, select **Hand after
+split**, and mark the one-card restriction for split aces. Availability checkboxes must
+match the table's currently available actions. Use **New Round** after the table clears.
+
+The preset uses the public rules response inspected November 11, 2026: five decks, S17,
+3:2 blackjack, no dealer peek, all split/double bets exposed to dealer blackjack, DAS,
+up to three splits, resplitting aces, and one draw per split ace. It corrects the no-peek
+decisions and disables Shoe Count because this game reshuffles for each round.
+
+Public compatibility check (no credentials or account required):
+
+```sh
+python blackjack_bvc.py
+```
+
+If direct access is blocked, save the JSON shown at
+https://bitcoinvideocasino.com/blackjack/ruleset and validate the local file:
+
+```sh
+python blackjack_bvc.py --rules-file downloaded-rules.json
+```
+
+The CLI refuses unsupported rules. The GUI uses a fixed preset and requires manual rule
+confirmation; it does not automatically fetch or monitor rule changes. A mismatch means
+stop using that preset. The included fixture is a dated snapshot, not a live check.
+
+This is an **advisor/practice adaptation, not connected autoplay**. No game action,
+account creation, deposit, withdrawal, or betting endpoint is implemented. Site suitability
+here means documented technical integration, not verified Ontario eligibility, a
+recommendation to deposit, or a positive expected return. See [validation notes](docs/bvc-profile-validation.md).
+
+**The Q-learning lab below is a separate American-peek, infinite-deck model. Its results
+must not be presented as BVC results.** BVC's five-deck shuffle, no-peek settlement and
+resplitting require a different simulator before any such learning claim is valid.
+
 A desktop hand advisor with manual entry, calibrated player/dealer OCR,
 background monitoring, and a separate reviewed Hi-Lo count panel.
+
+## Offline Q-learning lab
+
+The separate learning lab trains **hand decisions**, then freezes the policy and
+compares it with the existing basic strategy and an independently computed exact
+model optimum. It uses only Python's standard library and cannot contact a casino,
+read a screen, place a bet, or change the desktop advisor's recommendations.
+
+On Windows with Python 3.10+, double-click **Start_Learning_Lab_Windows.bat**.
+On other systems, or to choose the experiment size:
+
+```sh
+python blackjack_lab.py --train-episodes 1000000 --eval-rounds 200000
+```
+
+Open `learning-results/report.html`. `results.json` contains the numeric results;
+`checkpoint.json` saves Q values, action visits, rules and both training RNG states.
+More training resumes deterministically, without resetting exploration or visits:
+
+```sh
+python blackjack_lab.py --resume learning-results/checkpoint.json --train-episodes 1000000
+```
+
+Use `--train-episodes 0 --resume ...` for evaluation only, `--output` for separate
+experiment directories, and `--six-to-five` on a new run to study the payout penalty.
+The lab's output directory is ignored by git. Training and evaluation have separate
+seeds. Evaluation never updates Q values. Sessions use a fixed one-unit opening bet;
+splits/doubles can expose four units. There is no bankroll constraint, staking
+progression, stop-loss or profit-target selection.
+
+### Rule model and limitations
+
+The default model uses independent infinite-deck draws, S17, American dealer peek,
+3:2 naturals, double on any initial two cards, double after split, one split only,
+and one card per split ace. Split 21 pays even money. Insurance, side bets and
+surrender are excluded. These main-game rules are documented at:
+https://help.shuffle.com/en/articles/8231559-shuffle-original-blackjack-game-information
+
+**This is not a certified casino replica or an approved live bot.** The enumerated
+default model return is approximately 99.4296% per initial bet; Shuffle's marketing
+page lists 99.48%. That discrepancy remains unresolved. The program reports its
+modeled result rather than forcing it to match a marketing figure. Exact results
+apply to the stated model only and do not validate a casino's implementation.
+
+The baseline advisor uses a multi-deck strategy table; its result is separately
+evaluated under the lab's infinite-deck rules. The exact oracle enumerates all card
+probabilities and is never used as a training label. The Q learner receives only
+public hand state and sampled rewards, not the dealer hole card or outcome.
+
+The learning update uses gamma=1, learning rate `visits**-0.6` for bootstrapped
+actions and `1/visits` for always-terminal actions (stand, double and splitting aces), and
+epsilon-greedy exploration decaying from 0.30 to a 0.05 floor. Training uses uniformly sampled
+reachable decision states and uniformly sampled first actions (exploring starts),
+followed by epsilon-greedy decisions and ordinary sampled draws. Hit uses the same
+learning-rate schedule whether the sampled draw busts or continues; outcome-dependent
+learning rates would bias the value. Non-ace split actions use the bootstrapped schedule.
+Training episode counts therefore are **not** counts of full casino rounds.
+Splitting branches into two hands: the Bellman target adds both children's expected
+net returns. Simulation preserves their shared dealer outcome for correct round
+variance. Only hit/stand/double/split decisions are learned, never stake amounts.
+
+Evaluation uses fresh, complete rounds, natural and dealer-blackjack settlement,
+and independent fixed seeds per policy. Reports include exact expected returns,
+sample mean confidence intervals and the fraction of fixed-length sessions ending
+ahead. A positive sample session or confidence interval does not establish an edge.
+For this rule model even optimal expected return is negative; more training cannot
+overcome that mathematical bound. The lab measures decision quality, not future-roll
+prediction or evidence of live profitability.
 
 ## Start on Windows
 
@@ -27,10 +135,11 @@ show an error and retain manual entry.
 
 ## Hand Advisor
 
-1. Select S17 or H17, double-after-split and late-surrender rules. Confirm that
+1. For a custom table, select S17 or H17, double-after-split and late-surrender rules. Confirm that
    the table uses **4-8 decks, American dealer peek, and doubling on any initial
-   two cards**. Other rule families (European no-hole-card, single- or double-
-   deck, Spanish 21, early surrender) are outside the supported strategy.
+   two cards**. For BVC use the dedicated preset above. Other rule families
+   (single- or double-deck, Spanish 21, early surrender, original-bet-only no-peek)
+   are outside the supported strategy.
 2. Enter your current hand, such as `A, 7`, and the dealer's visible upcard.
    The advisor computes hard/soft totals and hit, stand, double, split or late
    surrender advice. It recognizes blackjack and busts.
