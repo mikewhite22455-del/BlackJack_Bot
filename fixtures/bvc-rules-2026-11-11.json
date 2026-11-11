@@ -1,0 +1,21 @@
+{
+  "time": 0,
+  "result": {
+    "can_double_after_split": true,
+    "progressive_bets": [1000],
+    "bet_resolution": 1000,
+    "insurance_pays": [2, 1],
+    "dealer_peeks": false,
+    "can_hit_split_aces": false,
+    "can_double_on": "first two",
+    "can_resplit_aces": true,
+    "blackjack_pays": [3, 2],
+    "progressive_init": 10000000,
+    "max_split_count": 3,
+    "progressive_paytable": [0, 5, 25, 50, 250, 1000, -1],
+    "dealer_hits_on_soft_17": false,
+    "loses_only_original_bet_on_dealer_blackjack": false,
+    "maximum_bet": 100000000,
+    "number_of_decks": 5
+  }
+}

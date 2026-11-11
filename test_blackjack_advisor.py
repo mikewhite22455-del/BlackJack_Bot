@@ -40,6 +40,40 @@ def test_manual_advice_respects_rules_and_available_actions(panel):
     assert "Confirm" in panel.advice.text()
 
 
+def test_bvc_profile_uses_no_peek_strategy_and_requires_split_state(panel):
+    panel.profile.setCurrentIndex(1)
+    assert not panel.soft17.isEnabled()
+    assert not panel.surrender.isEnabled()
+    panel.player.setText("8, 8")
+    panel.dealer.setText("10")
+    assert "Confirm" in panel.advice.text()
+    panel.confirm_rules.setChecked(True)
+    assert panel.advice.text().startswith("HIT")
+    panel.after_split.setChecked(True)
+    assert "must agree" in panel.advice.text()
+    panel.splits_used.setValue(3)
+    panel.dealer.setText("6")
+    assert panel.advice.text().startswith("STAND")
+    panel.reset_round()
+    assert panel.splits_used.value() == 0
+    panel.profile.setCurrentIndex(0)
+    assert panel.soft17.isEnabled()
+    assert not panel.confirm_rules.isChecked()
+
+
+def test_bvc_saved_profile_remains_unconfirmed_and_preserves_boxes(panel, tmp_path):
+    panel.settings_path = tmp_path / "bvc.json"
+    panel.profile.setCurrentIndex(1)
+    panel.confirm_rules.setChecked(True)
+    panel.regions = [None] * 5
+    panel.save_settings()
+    panel.profile.setCurrentIndex(0)
+    panel.load_settings()
+    assert panel.is_bvc
+    assert len(panel.regions) == 5
+    assert not panel.confirm_rules.isChecked()
+
+
 def test_stable_screen_advice_is_removed_on_uncertain_or_incomplete_readings(panel):
     panel.confirm_rules.setChecked(True)
     panel.source = "screen"

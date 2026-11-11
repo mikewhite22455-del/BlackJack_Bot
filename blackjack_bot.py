@@ -208,9 +208,21 @@ def create_overlay():  # noqa: C901
             self.shoe_button.clicked.connect(self.new_shoe)
             buttons.addWidget(self.shoe_button)
             root.addLayout(buttons)
+            self.advisor.profile_changed.connect(self.change_profile)
+            self.change_profile()
+            self.refresh_count()
+
+        def change_profile(self):
+            self.generation += 1
+            self.counter.new_shoe()
+            self.cards.clear()
+            self.tabs.setTabEnabled(1, not self.advisor.is_bvc)
             self.refresh_count()
 
         def refresh_count(self):
+            if self.advisor.is_bvc:
+                self.count_label.setText("Shoe count disabled: BVC reshuffles each round.")
+                return
             self.count_label.setText(
                 f"Running count: {self.counter.running_count:+d} | "
                 f"True count: {self.counter.true_count:+.2f} | "
@@ -222,6 +234,8 @@ def create_overlay():  # noqa: C901
             self.refresh_count()
 
         def apply_snapshot(self):
+            if self.advisor.is_bvc:
+                return
             try:
                 added = self.counter.observe(parse_cards(self.cards.text()))
             except ValueError as exc:
@@ -236,6 +250,11 @@ def create_overlay():  # noqa: C901
             self.counter.new_round()
             self.cards.clear()
             self.advisor.reset_round()
+            if self.advisor.is_bvc:
+                self.counter.new_shoe()
+                self.refresh_count()
+                self.status.setText("New BVC round. Fresh shuffle; no count carried forward.")
+                return
             self.status.setText("New round. Shoe count retained.")
 
         def new_shoe(self):

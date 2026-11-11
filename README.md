@@ -1,5 +1,45 @@
 # Blackjack Assistant
 
+## Bitcoin Video Casino profile
+
+The existing desktop advisor now includes **Bitcoin Video Casino - advisory / practice** in
+the Table profile selector. Start `Start_Blackjack_Windows.bat`, choose that profile, confirm
+the displayed rules against the current table, and enter the current hand or calibrate its
+card boxes. For split hands, enter the total splits used in the round, select **Hand after
+split**, and mark the one-card restriction for split aces. Availability checkboxes must
+match the table's currently available actions. Use **New Round** after the table clears.
+
+The preset uses the public rules response inspected November 11, 2026: five decks, S17,
+3:2 blackjack, no dealer peek, all split/double bets exposed to dealer blackjack, DAS,
+up to three splits, resplitting aces, and one draw per split ace. It corrects the no-peek
+decisions and disables Shoe Count because this game reshuffles for each round.
+
+Public compatibility check (no credentials or account required):
+
+```sh
+python blackjack_bvc.py
+```
+
+If direct access is blocked, save the JSON shown at
+https://bitcoinvideocasino.com/blackjack/ruleset and validate the local file:
+
+```sh
+python blackjack_bvc.py --rules-file downloaded-rules.json
+```
+
+The CLI refuses unsupported rules. The GUI uses a fixed preset and requires manual rule
+confirmation; it does not automatically fetch or monitor rule changes. A mismatch means
+stop using that preset. The included fixture is a dated snapshot, not a live check.
+
+This is an **advisor/practice adaptation, not connected autoplay**. No game action,
+account creation, deposit, withdrawal, or betting endpoint is implemented. Site suitability
+here means documented technical integration, not verified Ontario eligibility, a
+recommendation to deposit, or a positive expected return. See [validation notes](docs/bvc-profile-validation.md).
+
+**The Q-learning lab below is a separate American-peek, infinite-deck model. Its results
+must not be presented as BVC results.** BVC's five-deck shuffle, no-peek settlement and
+resplitting require a different simulator before any such learning claim is valid.
+
 A desktop hand advisor with manual entry, calibrated player/dealer OCR,
 background monitoring, and a separate reviewed Hi-Lo count panel.
 
@@ -95,10 +135,11 @@ show an error and retain manual entry.
 
 ## Hand Advisor
 
-1. Select S17 or H17, double-after-split and late-surrender rules. Confirm that
+1. For a custom table, select S17 or H17, double-after-split and late-surrender rules. Confirm that
    the table uses **4-8 decks, American dealer peek, and doubling on any initial
-   two cards**. Other rule families (European no-hole-card, single- or double-
-   deck, Spanish 21, early surrender) are outside the supported strategy.
+   two cards**. For BVC use the dedicated preset above. Other rule families
+   (single- or double-deck, Spanish 21, early surrender, original-bet-only no-peek)
+   are outside the supported strategy.
 2. Enter your current hand, such as `A, 7`, and the dealer's visible upcard.
    The advisor computes hard/soft totals and hit, stand, double, split or late
    surrender advice. It recognizes blackjack and busts.
