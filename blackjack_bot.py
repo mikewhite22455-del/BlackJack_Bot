@@ -1,6 +1,5 @@
-"""Blackjack counting assistant with reviewed, round-scoped observations.
+"""Blackjack desktop assistant: configured OCR, basic strategy and count review.
 
-Automatic player/dealer recognition and play advice are not implemented.
 Importing the counting logic does not require desktop/OCR dependencies.
 """
 
@@ -117,6 +116,7 @@ def detect_cards(img):
 # Keep the desktop classes lazy so core tests and imports need no Qt runtime.
 def create_overlay():  # noqa: C901
     from PyQt5 import QtCore, QtWidgets
+    from blackjack_advisor import AdvicePanel
 
     class OCRWorker(QtCore.QThread):
         result_ready = QtCore.pyqtSignal(int, object, str)
@@ -139,10 +139,20 @@ def create_overlay():  # noqa: C901
             self.counter = CardCounter()
             self.worker = None
             self.generation = 0
-            self.setWindowTitle("Blackjack Assistant - Count Review")
+            self.setWindowTitle("Blackjack Assistant")
             self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
-            self.resize(520, 420)
-            layout = QtWidgets.QVBoxLayout(self)
+            self.resize(780, 800)
+            root = QtWidgets.QVBoxLayout(self)
+            self.tabs = QtWidgets.QTabWidget()
+            root.addWidget(self.tabs)
+            self.advisor = AdvicePanel()
+            advisor_scroll = QtWidgets.QScrollArea()
+            advisor_scroll.setWidgetResizable(True)
+            advisor_scroll.setWidget(self.advisor)
+            self.tabs.addTab(advisor_scroll, "Hand Advisor")
+            count_panel = QtWidgets.QWidget()
+            self.tabs.addTab(count_panel, "Shoe Count")
+            layout = QtWidgets.QVBoxLayout(count_panel)
 
             instructions = QtWidgets.QLabel(
                 "Enter all visible cards, or read a card area and review the result. "
@@ -184,9 +194,11 @@ def create_overlay():  # noqa: C901
             self.status = QtWidgets.QLabel("Ready for a reviewed snapshot.")
             self.status.setWordWrap(True)
             layout.addWidget(self.status)
-            layout.addWidget(QtWidgets.QLabel(
-                "Play advice: unavailable - player/dealer recognition is unfinished."
-            ))
+            note = QtWidgets.QLabel(
+                "Hand Advisor readings do not change this count. "
+                "Apply a reviewed snapshot covering all visible table cards here.")
+            note.setWordWrap(True)
+            layout.addWidget(note)
 
             buttons = QtWidgets.QHBoxLayout()
             self.round_button = QtWidgets.QPushButton("New Round (table cleared)")
@@ -195,7 +207,7 @@ def create_overlay():  # noqa: C901
             self.shoe_button = QtWidgets.QPushButton("New Shoe")
             self.shoe_button.clicked.connect(self.new_shoe)
             buttons.addWidget(self.shoe_button)
-            layout.addLayout(buttons)
+            root.addLayout(buttons)
             self.refresh_count()
 
         def refresh_count(self):
@@ -223,12 +235,14 @@ def create_overlay():  # noqa: C901
             self.generation += 1
             self.counter.new_round()
             self.cards.clear()
+            self.advisor.reset_round()
             self.status.setText("New round. Shoe count retained.")
 
         def new_shoe(self):
             self.generation += 1
             self.counter.new_shoe()
             self.cards.clear()
+            self.advisor.reset_round()
             self.refresh_count()
             self.status.setText("New shoe. Set estimated decks remaining for this shoe.")
 
@@ -263,7 +277,9 @@ def create_overlay():  # noqa: C901
             self.status.setText("Review the detected ranks before applying this snapshot.")
 
         def closeEvent(self, event):
-            if self.worker is not None and self.worker.isRunning():
+            self.advisor.stop_monitoring()
+            workers = (self.worker, self.advisor.worker)
+            if any(worker is not None and worker.isRunning() for worker in workers):
                 self.status.setText("Wait for screen reading to finish, then close.")
                 event.ignore()
                 return
@@ -276,6 +292,8 @@ def run_bot():
     from PyQt5 import QtWidgets
 
     app = QtWidgets.QApplication(sys.argv)
+    app.setOrganizationName("BlackjackAssistant")
+    app.setApplicationName("BlackjackAssistant")
     overlay = create_overlay()
     overlay.show()
     return app.exec_()
