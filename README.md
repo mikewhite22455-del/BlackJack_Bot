@@ -1,5 +1,52 @@
 # Blackjack Assistant
 
+## Casino Time eight-deck build
+
+The dedicated profile targets **Casino Time / Pragmatic Play VIP Blackjack**:
+eight decks (416 cards) in one persistent shoe. It includes a desktop practice
+table, public-card shoe replay, finite-shoe action comparisons, and a repeatable
+scenario runner. The table's published rules are fixed; unresolved operating
+details are visibly labelled assumptions.
+
+### Open the practice program on Windows
+
+1. Install Python 3.10+ and extract this branch's ZIP.
+2. Double-click **Start_Casino_Time_Windows.bat**.
+3. Choose a dealer-ten scenario. The article does not establish this procedure.
+4. Set the assumed cut position, seat count and hidden burns, then start a session.
+5. Click **Deal**. Control seat 1, or finish a round using basic strategy. Other
+   seats use basic strategy and share the same dealer and shoe.
+6. Use **Compare actions** during a decision to simulate 1,000 continuations for
+   each legal action. Export the exposed-card log to replay its count later.
+
+Each new practice session uses seed 1 for reproducibility. A new round keeps the
+same shoe until the cut is reached; replacement then happens before the next deal.
+Settings apply when starting a new session. Practice units are not money.
+
+For the existing manual/calibrated OCR advisor, run **Start_Blackjack_Windows.bat**
+and select **Casino Time - Pragmatic VIP / research**. Confirm the current rules,
+select the verified dealer-ten procedure if known, and use the hand controls.
+The new identity-based shoe ledger is in the practice/replay program; the legacy
+OCR advisor does not automatically identify and track every physical table card.
+
+Run the scenario experiment using **Run_Casino_Time_Research_Windows.bat**, or:
+
+```sh
+python casinotime_lab.py --rounds 25000 --seats 5 --burn-cards 1 --cut-cards 208 312 --dealer-ten both --output casinotime-results
+```
+
+This runs 100,000 synthetic rounds across four explicitly assumed scenarios.
+Open `casinotime-results/report.html`. CSV round histories and JSON results are
+also written. [Validation and rule coverage](docs/casinotime-validation.md)
+include the completed benchmark and remaining integration work.
+
+**Current scope:** implemented main-game rules and public-evidence analysis,
+with no live Casino Time connection or automatic full-table capture. This is not
+a certified replica or proof of positive expected return. The older Q-learning
+lab below uses a separate infinite-deck model and is not Casino Time training.
+Optional CrewAI reviewers can inspect results; setup is in the validation notes.
+
+
 ## Bitcoin Video Casino profile
 
 The existing desktop advisor now includes **Bitcoin Video Casino - advisory / practice** in

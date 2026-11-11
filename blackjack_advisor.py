@@ -7,6 +7,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from blackjack_bot import parse_cards
 from blackjack_bvc import recommend_bvc
+from casinotime_core import recommend_casinotime
 from blackjack_strategy import Rules, recommend
 from blackjack_vision import StableHand, read_rank
 
@@ -167,11 +168,19 @@ class AdvicePanel(QtWidgets.QWidget):
         group = QtWidgets.QGroupBox("Table profile")
         form = QtWidgets.QFormLayout(group)
         self.profile = QtWidgets.QComboBox()
-        self.profile.addItems(["Custom table - American peek", "Bitcoin Video Casino - advisory / practice"])
+        self.profile.addItems(["Custom table - American peek", "Bitcoin Video Casino - advisory / practice",
+                               "Casino Time - Pragmatic VIP / research"])
         form.addRow(self.profile)
         self.profile_note = QtWidgets.QLabel("Custom rules: 4-8 decks, American peek; double on any first two cards.")
         self.profile_note.setWordWrap(True)
         form.addRow(self.profile_note)
+        self.ct_ten = QtWidgets.QComboBox()
+        self.ct_ten.addItem("Dealer ten-upcard procedure: unconfirmed", None)
+        self.ct_ten.addItem("Confirmed: ten-upcard peek before player decisions", "peek")
+        self.ct_ten.addItem("Confirmed: no ten-upcard peek; blackjack takes all bets", "no_peek_all_bets")
+        self.ct_ten.hide()
+        self.ct_ten.currentIndexChanged.connect(self.rules_changed)
+        form.addRow(self.ct_ten)
         self.soft17 = QtWidgets.QComboBox()
         self.soft17.addItems(["Dealer stands on soft 17 (S17)", "Dealer hits soft 17 (H17)"])
         form.addRow(self.soft17)
@@ -192,11 +201,15 @@ class AdvicePanel(QtWidgets.QWidget):
     def is_bvc(self):
         return self.profile.currentIndex() == 1
 
+    @property
+    def is_casinotime(self):
+        return self.profile.currentIndex() == 2
+
     def change_profile(self):
         self.stop_monitoring()
         for field in (self.soft17, self.das, self.surrender):
-            field.setEnabled(not self.is_bvc)
-        if self.is_bvc:
+            field.setEnabled(not (self.is_bvc or self.is_casinotime))
+        if self.is_bvc or self.is_casinotime:
             self.soft17.setCurrentIndex(0)
             self.das.setChecked(True)
             self.surrender.setChecked(False)
@@ -205,6 +218,13 @@ class AdvicePanel(QtWidgets.QWidget):
             "Fresh shuffle each round. No insurance or side-bet advice. "
             "Rules checked November 11, 2026; confirm they still match."
             if self.is_bvc else "Custom rules: 4-8 decks, American peek; double on any first two cards.")
+        if self.is_casinotime:
+            self.profile_note.setText(
+                "Casino Time Pragmatic VIP: 8 decks, S17, 3:2, DAS, one split per box, one card per split ace. "
+                "Continuing shoe; ace checked before decisions. Ten-upcard rule needs confirmation. "
+                "Use advice only after any dealer blackjack check is complete. No verified live integration.")
+        self.ct_ten.setVisible(self.is_casinotime)
+        self.ct_ten.setCurrentIndex(0)
         self.splits_used.setVisible(self.is_bvc)
         self.splits_label.setVisible(self.is_bvc)
         self.confirm_rules.setChecked(False)
@@ -307,6 +327,8 @@ class AdvicePanel(QtWidgets.QWidget):
                        after_split=self.after_split.isChecked(), split_aces=self.split_aces.isChecked())
         if self.is_bvc:
             return recommend_bvc(cards, dealer, splits_used=self.splits_used.value(), **options)
+        if self.is_casinotime:
+            return recommend_casinotime(cards, dealer, dealer_ten=self.ct_ten.currentData(), **options)
         return recommend(cards, dealer, Rules(
             hit_soft_17=self.soft17.currentIndex() == 1,
             double_after_split=self.das.isChecked(), late_surrender=self.surrender.isChecked()), **options)
@@ -477,7 +499,7 @@ class AdvicePanel(QtWidgets.QWidget):
     def save_settings(self):
         data = {"version": 1, "regions": self.regions, "soft17": self.soft17.currentIndex(),
                 "das": self.das.isChecked(), "surrender": self.surrender.isChecked(),
-                "profile": "bvc" if self.is_bvc else "custom"}
+                "profile": "bvc" if self.is_bvc else "casinotime" if self.is_casinotime else "custom"}
         try:
             self.settings_path.parent.mkdir(parents=True, exist_ok=True)
             temporary = self.settings_path.with_suffix(".tmp")
@@ -501,9 +523,9 @@ class AdvicePanel(QtWidgets.QWidget):
             for region in data["regions"]:
                 if region is not None:
                     validate_region(region, screens[region["screen"]])
-            self.profile.setCurrentIndex(1 if data.get("profile") == "bvc" else 0)
+            self.profile.setCurrentIndex({"bvc": 1, "casinotime": 2}.get(data.get("profile"), 0))
             self.regions = data["regions"]
-            if not self.is_bvc:
+            if not self.is_bvc and not self.is_casinotime:
                 self.soft17.setCurrentIndex(1 if data.get("soft17") == 1 else 0)
                 self.das.setChecked(data.get("das") is True)
                 self.surrender.setChecked(data.get("surrender") is True)

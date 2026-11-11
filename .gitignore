@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 blackjack-table.json
 /learning-results*/
+/casinotime-results*/
+/shoe-log*.json

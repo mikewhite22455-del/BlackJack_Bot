@@ -215,6 +215,8 @@ def create_overlay():  # noqa: C901
         def change_profile(self):
             self.generation += 1
             self.counter.new_shoe()
+            if self.advisor.is_casinotime:
+                self.decks.setValue(8)
             self.cards.clear()
             self.tabs.setTabEnabled(1, not self.advisor.is_bvc)
             self.refresh_count()

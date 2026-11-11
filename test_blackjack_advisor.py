@@ -74,6 +74,35 @@ def test_bvc_saved_profile_remains_unconfirmed_and_preserves_boxes(panel, tmp_pa
     assert not panel.confirm_rules.isChecked()
 
 
+def test_casinotime_profile_requires_ten_rule_and_limits_splits(panel):
+    panel.profile.setCurrentIndex(2)
+    panel.player.setText("8, 8")
+    panel.dealer.setText("10")
+    panel.confirm_rules.setChecked(True)
+    assert "Confirm the dealer-ten" in panel.advice.text()
+    panel.ct_ten.setCurrentIndex(1)
+    assert not panel.confirm_rules.isChecked()
+    panel.confirm_rules.setChecked(True)
+    assert panel.advice.text().startswith("SPLIT")
+    panel.after_split.setChecked(True)
+    assert panel.advice.text().startswith("HIT")
+    assert not panel.soft17.isEnabled()
+    assert not panel.surrender.isChecked()
+
+
+def test_casinotime_setup_never_restores_rule_confirmation(panel, tmp_path):
+    panel.settings_path = tmp_path / "casino-time.json"
+    panel.profile.setCurrentIndex(2)
+    panel.ct_ten.setCurrentIndex(2)
+    panel.confirm_rules.setChecked(True)
+    panel.save_settings()
+    panel.profile.setCurrentIndex(0)
+    panel.load_settings()
+    assert panel.is_casinotime
+    assert panel.ct_ten.currentData() is None
+    assert not panel.confirm_rules.isChecked()
+
+
 def test_stable_screen_advice_is_removed_on_uncertain_or_incomplete_readings(panel):
     panel.confirm_rules.setChecked(True)
     panel.source = "screen"

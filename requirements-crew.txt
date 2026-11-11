@@ -1,0 +1,3 @@
+# Optional; the blackjack engine and desktop app do not require an LLM.
+# Official CrewAI 1.x Agent / Task / Crew API; review uses local Ollama.
+crewai[litellm]>=1.15,<2
