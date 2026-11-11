@@ -36,7 +36,7 @@ def detect_cards(img):
 
 # Function to Update Count
 def update_count(detected_cards):
-    global running_count, true_count, decks_remaining
+    global running_count, true_count
     for card in detected_cards:
         running_count += card_values[card]
     true_count = running_count / max(1, decks_remaining)
