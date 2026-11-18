@@ -37,14 +37,19 @@ def parse_cards(text):
     return cards
 
 
-def get_bet_size(tc):
-    """Return the original unit schedule, using whole-count lower bounds."""
+def get_bet_size(tc, max_units=10):
+    """Return the unit schedule, using whole-count lower bounds and a hard cap.
+
+    Units are not dollars. Pair with SessionConfig.unit_size for cash sizing.
+    """
     tc = float(tc)
     if not math.isfinite(tc):
         raise ValueError("True count must be finite.")
+    if not isinstance(max_units, int) or isinstance(max_units, bool) or max_units < 1:
+        raise ValueError("max_units must be a positive integer.")
     if tc < 1:
         return 1
-    return min(10, 2 * math.floor(tc))
+    return min(max_units, 2 * math.floor(tc))
 
 
 class CardCounter:
@@ -117,6 +122,7 @@ def detect_cards(img):
 def create_overlay():  # noqa: C901
     from PyQt5 import QtCore, QtWidgets
     from blackjack_advisor import AdvicePanel
+    from blackjack_bankroll_panel import BankrollPanel
 
     class OCRWorker(QtCore.QThread):
         result_ready = QtCore.pyqtSignal(int, object, str)
@@ -141,7 +147,7 @@ def create_overlay():  # noqa: C901
             self.generation = 0
             self.setWindowTitle("Blackjack Assistant")
             self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
-            self.resize(780, 800)
+            self.resize(820, 860)
             root = QtWidgets.QVBoxLayout(self)
             self.tabs = QtWidgets.QTabWidget()
             root.addWidget(self.tabs)
@@ -152,6 +158,12 @@ def create_overlay():  # noqa: C901
             self.tabs.addTab(advisor_scroll, "Hand Advisor")
             count_panel = QtWidgets.QWidget()
             self.tabs.addTab(count_panel, "Shoe Count")
+            self.bankroll = BankrollPanel(self.counter)
+            self.bankroll.session_changed.connect(self.refresh_count)
+            bankroll_scroll = QtWidgets.QScrollArea()
+            bankroll_scroll.setWidgetResizable(True)
+            bankroll_scroll.setWidget(self.bankroll)
+            self.tabs.addTab(bankroll_scroll, "Bankroll / Session")
             layout = QtWidgets.QVBoxLayout(count_panel)
 
             instructions = QtWidgets.QLabel(
@@ -207,14 +219,34 @@ def create_overlay():  # noqa: C901
             self.shoe_button = QtWidgets.QPushButton("New Shoe")
             self.shoe_button.clicked.connect(self.new_shoe)
             buttons.addWidget(self.shoe_button)
+            self.abort_all_button = QtWidgets.QPushButton("Emergency stop")
+            self.abort_all_button.clicked.connect(self.emergency_stop)
+            buttons.addWidget(self.abort_all_button)
             root.addLayout(buttons)
             self.refresh_count()
 
         def refresh_count(self):
-            self.count_label.setText(
+            units = get_bet_size(self.counter.true_count)
+            text = (
                 f"Running count: {self.counter.running_count:+d} | "
                 f"True count: {self.counter.true_count:+.2f} | "
-                f"Schedule: {get_bet_size(self.counter.true_count)} units"
+                f"Schedule: {units} units"
+            )
+            advice = self.bankroll.manager.advice_for(self.counter.true_count)
+            if self.bankroll.manager.state.status.value != "idle":
+                if advice.allowed:
+                    text += f" | Session bet: {advice.units}u / ${advice.amount:.2f}"
+                else:
+                    text += " | Session bet: paused"
+            self.count_label.setText(text)
+            self.bankroll.refresh(notify=False)
+
+        def emergency_stop(self):
+            self.advisor.stop_monitoring()
+            self.generation += 1
+            self.bankroll.abort_session()
+            self.status.setText(
+                "Emergency stop: monitoring halted and bankroll session aborted."
             )
 
         def change_decks(self, value):

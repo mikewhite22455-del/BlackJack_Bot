@@ -1,0 +1,10 @@
+{
+  "starting_bankroll": 200,
+  "unit_size": 5,
+  "max_units": 4,
+  "stop_loss": 50,
+  "take_profit": 50,
+  "mode": "practice",
+  "table_min": 5,
+  "table_max": 500
+}
