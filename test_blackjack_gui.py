@@ -8,6 +8,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PyQt5 import QtCore, QtTest, QtWidgets  # noqa: E402
 from blackjack_bot import create_overlay  # noqa: E402
+from blackjack_session import HandResult  # noqa: E402
 
 
 class OverlayTests(unittest.TestCase):
@@ -49,6 +50,29 @@ class OverlayTests(unittest.TestCase):
         self.overlay.apply_button.click()
         self.overlay.decks.setValue(2)
         self.assertIn("True count: +1.00", self.overlay.count_label.text())
+
+    def test_bankroll_session_caps_and_emergency_stop(self):
+        panel = self.overlay.bankroll
+        panel.starting.setValue(100)
+        panel.unit_size.setValue(5)
+        panel.max_units.setValue(2)
+        panel.stop_loss.setValue(10)
+        panel.take_profit.setValue(20)
+        panel.table_min.setValue(5)
+        panel.table_max.setValue(100)
+        panel.mode.setCurrentIndex(0)
+        panel.start_button.click()
+        self.assertEqual(panel.manager.state.status.value, "active")
+        self.overlay.cards.setText("2, 3, 4, 5")
+        self.overlay.apply_button.click()
+        self.assertIn("Session bet:", self.overlay.count_label.text())
+        panel.bet_amount.setValue(5)
+        panel.record(HandResult.LOSS)
+        panel.bet_amount.setValue(5)
+        panel.record(HandResult.LOSS)
+        self.assertEqual(panel.manager.state.status.value, "stopped")
+        self.overlay.emergency_stop()
+        self.assertIn("aborted", panel.status.text().lower())
 
     def test_invalid_input_and_unconfigured_capture(self):
         self.overlay.cards.setText("5, invalid")

@@ -81,6 +81,20 @@ An incorrect applied snapshot can corrupt the count; restart the shoe count if
 one was applied. The unit schedule retains the original 1/2/4/6/8/10 mapping,
 using the lower whole-count tier for fractional counts. Units are not dollars.
 
+## Bankroll / Session
+
+Use the **Bankroll / Session** tab before any real-money play:
+
+1. Start in **Practice** mode with a small unit size, stop-loss, take-profit, and
+   max-units cap. Copy values from `session-config.example.json` if helpful.
+2. Record each hand result manually (win / loss / push / blackjack / surrender).
+   The panel suggests a cash bet from the true-count schedule, capped by your
+   limits and table min/max. It does **not** click a casino or place bets.
+3. **Live** mode requires an explicit confirmation checkbox. Hitting stop-loss or
+   take-profit stops betting advice. **Emergency stop** also halts OCR monitoring.
+4. Optional local `session-log.jsonl` records bankroll events only—never cards or
+   screenshots. Do not commit log files or API credentials.
+
 ## Validation
 
 ```sh

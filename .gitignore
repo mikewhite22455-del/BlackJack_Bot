@@ -3,3 +3,6 @@ __pycache__/
 .pytest_cache/
 *.pyc
 blackjack-table.json
+blackjack-session.json
+session-log.jsonl
+*.jsonl
